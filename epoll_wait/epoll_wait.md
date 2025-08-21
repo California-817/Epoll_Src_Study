@@ -1,0 +1,44 @@
+```c
+SYSCALL_DEFINE4(epoll_wait, int, epfd, struct epoll_event __user *, events, //用户接收就绪事件的空间地址
+        int, maxevents, int, timeout)
+{
+    int error;
+    struct file *file;
+    struct eventpoll *ep;
+    /* The maximum number of event must be greater than zero */
+    if (maxevents <= 0 || maxevents > EP_MAX_EVENTS)  //判断用户层最大接收时间数量合法
+        return -EINVAL;
+    /* Verify that the area passed by the user is writeable */
+    /* 这个地方有必要说明一下:
+     * 内核对应用程序采取的策略是"绝对不信任",
+     * 所以内核跟应用程序之间的数据交互大都是copy, 不允许(也时候也是不能...)指针引用.
+     * epoll_wait()需要内核返回数据给用户空间, 内存由用户程序提供,
+     * 所以内核会用一些手段来验证这一段内存空间是不是有效的.
+     */
+    if (!access_ok(VERIFY_WRITE, events, maxevents * sizeof(struct epoll_event))) { //判断用户提供的空间是合法的
+        error = -EFAULT;
+        goto error_return;
+    }
+    /* Get the "struct file *" for the eventpoll file */
+    error = -EBADF;
+    /* 获取epollfd的struct file, epollfd也是文件嘛 */
+    file = fget(epfd);
+    if (!file)
+        goto error_return;
+
+    error = -EINVAL;
+    /* 检查一下它是不是一个真正的epollfd... */
+    if (!is_file_epoll(file))
+        goto error_fput;
+
+    /* 获取eventpoll结构 */
+    ep = file->private_data;
+
+    /* 等待事件到来~~ */   epoll_wait的核心函数
+    error = ep_poll(ep, events, maxevents, timeout);
+    error_fput:
+    fput(file);
+    error_return:
+    return error;
+}
+```
