@@ -26,4 +26,8 @@
  ![](imgs/cb唤醒wq等待项.png)
  ### 5.区分两个等待队列
  ![](imgs/区分两个队列.png)
+ ## 作者
+Author: California-817
+QQ: 1876439531
+QQ邮箱: 1876439531@qq.com
 
