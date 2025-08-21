@@ -1,2 +1,3 @@
 # Epoll_Src_Study
 对epoll源码的详细分析,并给出epoll流程图
+并结合源码详细分析LT与ET触发模式,epoll的惊群现象
